@@ -6,6 +6,8 @@ import android.view.View
 import androidx.databinding.ViewDataBinding
 import com.baidu.mapapi.map.*
 import com.baidu.mapapi.model.LatLng
+import com.baidu.mapapi.utils.CoordinateConverter
+import com.baidu.mapapi.utils.CoordinateConverter.CoordType
 import org.owntracks.android.R
 import org.owntracks.android.data.waypoints.WaypointModel
 import org.owntracks.android.location.LatLng as OwnTracksLatLng
@@ -23,17 +25,25 @@ internal class BaiduMapFragment(
   private val markers = mutableMapOf<String, Marker>()
   private val regions = mutableMapOf<Long, Overlay>()
 
+  /**
+   * 将WGS84坐标转换为BD09坐标
+   */
+  private fun convertToBD09(latLng: OwnTracksLatLng): LatLng {
+    val sourceLatLng = LatLng(latLng.latitude.value, latLng.longitude.value)
+    return CoordinateConverter().from(CoordinateConverter.CoordType.GPS).coord(sourceLatLng).convert()
+  }
+
   override val layout: Int = R.layout.fragment_map_baidu
 
   override fun updateCamera(latLng: OwnTracksLatLng) {
-    val baiduLatLng = LatLng(latLng.latitude.value, latLng.longitude.value)
+    val baiduLatLng = convertToBD09(latLng)
     val builder = MapStatus.Builder()
     builder.target(baiduLatLng)
     baiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()))
   }
 
   override fun updateMarkerOnMap(id: String, latLng: OwnTracksLatLng, image: Bitmap) {
-    val baiduLatLng = LatLng(latLng.latitude.value, latLng.longitude.value)
+    val baiduLatLng = convertToBD09(latLng)
     val markerOptions =
         MarkerOptions()
             .position(baiduLatLng)
@@ -101,7 +111,7 @@ internal class BaiduMapFragment(
   }
 
   override fun addRegion(waypoint: WaypointModel) {
-    val center = LatLng(waypoint.geofenceLatitude.value, waypoint.geofenceLongitude.value)
+    val center = convertToBD09(OwnTracksLatLng(waypoint.geofenceLatitude, waypoint.geofenceLongitude))
     val circleOptions =
         CircleOptions().center(center).radius(waypoint.geofenceRadius).fillColor(0x4000FF00)
 

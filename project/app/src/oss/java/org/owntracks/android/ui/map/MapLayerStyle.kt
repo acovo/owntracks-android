@@ -39,8 +39,6 @@ enum class MapLayerStyle {
 
 val mapLayerSelectorButtonsToStyles =
     mapOf(
-        R.id.fabMapLayerOpenStreetMap to MapLayerStyle.OpenStreetMapNormal,
-        R.id.fabMapLayerOpenStreetMapWikimedia to MapLayerStyle.OpenStreetMapWikimedia,
         R.id.fabMapLayerBaiduMapNormal to MapLayerStyle.BaiduMapNormal,
         R.id.fabMapLayerBaiduMapSatellite to MapLayerStyle.BaiduMapSatellite,
         R.id.fabMapLayerBaiduMapHybrid to MapLayerStyle.BaiduMapHybrid)

@@ -1,4 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import java.io.File
+import java.util.Properties
 
 plugins {
   id("com.android.application")
@@ -15,6 +17,16 @@ val googleMapsAPIKey =
     System.getenv("GOOGLE_MAPS_API_KEY")?.toString()
         ?: extra.get("google_maps_api_key")?.toString()
         ?: "PLACEHOLDER_API_KEY"
+
+// 读取local.properties文件
+val localProperties = File(rootDir, "local.properties")
+val bmapAPIKey = if (localProperties.exists()) {
+    val props = Properties()
+    localProperties.inputStream().use { props.load(it) }
+    System.getenv("BMAP_API_KEY")?.toString() ?: props.getProperty("bmap.api.key", "PLACEHOLDER_BMAP_API_KEY")
+} else {
+    System.getenv("BMAP_API_KEY")?.toString() ?: "PLACEHOLDER_BMAP_API_KEY"
+}
 
 val gmsImplementation: Configuration by configurations.creating
 
@@ -205,6 +217,7 @@ android {
     }
     create("oss") {
       dimension = "locationProvider"
+      manifestPlaceholders["bmap.api.key"] = bmapAPIKey
       dependencies {
         // 百度地图SDK依赖配置
         implementation("com.baidu.lbsyun:BaiduMapSDK_Map:7.6.4")
