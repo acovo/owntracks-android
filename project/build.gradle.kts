@@ -23,8 +23,6 @@ extensions.findByName("develocity")?.withGroovyBuilder {
   }
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-  kotlinOptions { jvmTarget = JavaVersion.VERSION_21.toString() }
-}
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> { kotlinOptions { jvmTarget = JavaVersion.VERSION_17.toString() } }
 
 tasks.wrapper { distributionType = Wrapper.DistributionType.BIN }
