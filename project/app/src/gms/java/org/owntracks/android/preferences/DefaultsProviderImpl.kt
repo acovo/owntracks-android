@@ -11,6 +11,11 @@ class DefaultsProviderImpl : DefaultsProvider {
       Preferences::mapLayerStyle -> MapLayerStyle.GoogleMapDefault
       Preferences::reverseGeocodeProvider -> ReverseGeocodeProvider.Device
       Preferences::host -> org.owntracks.android.BuildConfig.MQTT_HOST
+      Preferences::port -> org.owntracks.android.BuildConfig.MQTT_PORT
+      Preferences::keepalive -> org.owntracks.android.BuildConfig.KEEPALIVE
+      Preferences::locatorDisplacement -> org.owntracks.android.BuildConfig.LOCATOR_DISPLACEMENT
+      Preferences::cmd -> org.owntracks.android.BuildConfig.CMD
+      Preferences::remoteConfiguration -> org.owntracks.android.BuildConfig.REMOTE_CONFIGURATION
       else -> super.getDefaultValue<T>(preferences, property)
     }
         as T

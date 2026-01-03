@@ -37,6 +37,51 @@ val mqttHost = if (localProperties.exists()) {
     System.getenv("MQTT_HOST")?.toString() ?: ""
 }
 
+// 读取mqtt.port配置
+val mqttPort = if (localProperties.exists()) {
+    val props = Properties()
+    localProperties.inputStream().use { props.load(it) }
+    System.getenv("MQTT_PORT")?.toInt() ?: props.getProperty("mqtt.port", "1883").toInt()
+} else {
+    System.getenv("MQTT_PORT")?.toInt() ?: 1883
+}
+
+// 读取keepalive配置
+val keepalive = if (localProperties.exists()) {
+    val props = Properties()
+    localProperties.inputStream().use { props.load(it) }
+    System.getenv("KEEPALIVE")?.toInt() ?: props.getProperty("keepalive", "30").toInt()
+} else {
+    System.getenv("KEEPALIVE")?.toInt() ?: 30
+}
+
+// 读取locatorDisplacement配置
+val locatorDisplacement = if (localProperties.exists()) {
+    val props = Properties()
+    localProperties.inputStream().use { props.load(it) }
+    System.getenv("LOCATOR_DISPLACEMENT")?.toInt() ?: props.getProperty("locatorDisplacement", "10").toInt()
+} else {
+    System.getenv("LOCATOR_DISPLACEMENT")?.toInt() ?: 10
+}
+
+// 读取cmd配置
+val cmd = if (localProperties.exists()) {
+    val props = Properties()
+    localProperties.inputStream().use { props.load(it) }
+    System.getenv("CMD")?.toBoolean() ?: props.getProperty("cmd", "true").toBoolean()
+} else {
+    System.getenv("CMD")?.toBoolean() ?: true
+}
+
+// 读取remoteConfiguration配置
+val remoteConfiguration = if (localProperties.exists()) {
+    val props = Properties()
+    localProperties.inputStream().use { props.load(it) }
+    System.getenv("REMOTE_CONFIGURATION")?.toBoolean() ?: props.getProperty("remoteConfiguration", "true").toBoolean()
+} else {
+    System.getenv("REMOTE_CONFIGURATION")?.toBoolean() ?: true
+}
+
 val gmsImplementation: Configuration by configurations.creating
 
 val packageVersionCode: Int = System.getenv("VERSION_CODE")?.toInt() ?: 1
@@ -68,6 +113,41 @@ android {
         "String",
         "MQTT_HOST",
         "\"$mqttHost\"",
+    )
+    
+    // 添加MQTT_PORT配置
+    buildConfigField(
+        "int",
+        "MQTT_PORT",
+        "$mqttPort",
+    )
+    
+    // 添加KEEPALIVE配置
+    buildConfigField(
+        "int",
+        "KEEPALIVE",
+        "$keepalive",
+    )
+    
+    // 添加LOCATOR_DISPLACEMENT配置
+    buildConfigField(
+        "int",
+        "LOCATOR_DISPLACEMENT",
+        "$locatorDisplacement",
+    )
+    
+    // 添加CMD配置
+    buildConfigField(
+        "boolean",
+        "CMD",
+        "$cmd",
+    )
+    
+    // 添加REMOTE_CONFIGURATION配置
+    buildConfigField(
+        "boolean",
+        "REMOTE_CONFIGURATION",
+        "$remoteConfiguration",
     )
 
     testInstrumentationRunner = "org.owntracks.android.testutils.hilt.CustomTestRunner"
