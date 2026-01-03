@@ -10,6 +10,7 @@ class DefaultsProviderImpl : DefaultsProvider {
     return when (property) {
       Preferences::mapLayerStyle -> MapLayerStyle.BaiduMapNormal
       Preferences::reverseGeocodeProvider -> ReverseGeocodeProvider.None
+      Preferences::host -> org.owntracks.android.BuildConfig.MQTT_HOST
       else -> super.getDefaultValue<T>(preferences, property)
     }
         as T

@@ -28,6 +28,15 @@ val bmapAPIKey = if (localProperties.exists()) {
     System.getenv("BMAP_API_KEY")?.toString() ?: "PLACEHOLDER_BMAP_API_KEY"
 }
 
+// 读取mqtt.host配置
+val mqttHost = if (localProperties.exists()) {
+    val props = Properties()
+    localProperties.inputStream().use { props.load(it) }
+    System.getenv("MQTT_HOST")?.toString() ?: props.getProperty("mqtt.host", "")
+} else {
+    System.getenv("MQTT_HOST")?.toString() ?: ""
+}
+
 val gmsImplementation: Configuration by configurations.creating
 
 val packageVersionCode: Int = System.getenv("VERSION_CODE")?.toInt() ?: 1
@@ -52,6 +61,13 @@ android {
         "int",
         "TRANSLATION_COUNT",
         localeCount.toString(),
+    )
+    
+    // 添加MQTT_HOST配置
+    buildConfigField(
+        "String",
+        "MQTT_HOST",
+        "\"$mqttHost\"",
     )
 
     testInstrumentationRunner = "org.owntracks.android.testutils.hilt.CustomTestRunner"

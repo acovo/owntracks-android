@@ -39,6 +39,9 @@ internal class BaiduMapFragment(
     val baiduLatLng = convertToBD09(latLng)
     val builder = MapStatus.Builder()
     builder.target(baiduLatLng)
+    // 设置默认缩放级别为最大级别-4
+    val maxZoomLevel = baiduMap.maxZoomLevel
+    builder.zoom(maxZoomLevel - 4f)
     baiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()))
   }
 
