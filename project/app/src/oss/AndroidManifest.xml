@@ -2,4 +2,11 @@
 
 	<!-- To request to be whitelisted from battery optimizations -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <application>
+        <!-- 百度地图API Key配置 -->
+        <meta-data
+            android:name="com.baidu.lbsapi.API_KEY"
+            android:value="" />
+    </application>
 </manifest>

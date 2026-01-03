@@ -68,6 +68,10 @@ kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-te
 kotlin-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlin-datetime" }
 kotlin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
 
+# Baidu Map SDK
+baidu-map-sdk = { module = "com.baidu.lbsyun:BaiduMapSDK_Map", version = "6.3.0" }
+baidu-map-utils = { module = "com.baidu.lbsyun:BaiduMapSDK_Search", version = "6.3.0" }
+
 # Hilt
 hilt-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt" }

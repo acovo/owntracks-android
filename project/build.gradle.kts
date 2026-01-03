@@ -3,6 +3,7 @@
 buildscript {
   repositories {
     mavenCentral()
+    google()
   }
   dependencies { classpath(libs.bundles.buildscript) }
 }

@@ -13,6 +13,11 @@ dependencyResolutionManagement {
     mavenCentral()
     maven("https://jitpack.io")
     maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+    // 百度地图SDK仓库
+    maven {
+      url = uri("https://maven.baidu.com/")
+      isAllowInsecureProtocol = true
+    }
   }
 }
 

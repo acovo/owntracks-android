@@ -18,7 +18,6 @@ import dagger.hilt.EntryPoints
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EarlyEntryPoint
 import dagger.hilt.android.EarlyEntryPoints
-import dagger.hilt.android.HiltAndroidApp
 import dagger.hilt.components.SingletonComponent
 import java.security.Security
 import javax.inject.Provider
@@ -36,16 +35,7 @@ import org.owntracks.android.preferences.types.AppTheme
 import org.owntracks.android.services.MessageProcessor
 import org.owntracks.android.services.worker.Scheduler
 import org.owntracks.android.support.RunThingsOnOtherThreads
-import org.owntracks.android.support.receiver.StartBackgroundServiceReceiver
 import timber.log.Timber
-
-@HiltAndroidApp
-class App : BaseApp() {
-  override fun onCreate() {
-    super.onCreate()
-    StartBackgroundServiceReceiver.enable(this)
-  }
-}
 
 open class BaseApp :
     Application(),

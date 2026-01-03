@@ -1,13 +1,33 @@
 package org.owntracks.android.ui.map
 
+import androidx.databinding.ViewDataBinding
 import org.owntracks.android.R
 import org.owntracks.android.preferences.types.FromConfiguration
+import org.owntracks.android.ui.map.baidu.BaiduMapFragment
+import org.owntracks.android.ui.map.osm.OSMMapFragment
 
 enum class MapLayerStyle {
   OpenStreetMapNormal,
-  OpenStreetMapWikimedia;
+  OpenStreetMapWikimedia,
+  BaiduMapNormal,
+  BaiduMapSatellite,
+  BaiduMapHybrid;
 
-  fun isSameProviderAs(@Suppress("UNUSED_PARAMETER") mapLayerStyle: MapLayerStyle): Boolean = true
+  fun isSameProviderAs(mapLayerStyle: MapLayerStyle): Boolean {
+    return setOf("OpenStreetMap", "BaiduMap").any {
+      name.startsWith(it) && mapLayerStyle.name.startsWith(it)
+    }
+  }
+
+  fun getFragmentClass(): Class<out MapFragment<out ViewDataBinding>> {
+    return when (this) {
+      OpenStreetMapNormal,
+      OpenStreetMapWikimedia -> OSMMapFragment::class.java
+      BaiduMapNormal,
+      BaiduMapSatellite,
+      BaiduMapHybrid -> BaiduMapFragment::class.java
+    }
+  }
 
   companion object {
     @JvmStatic
@@ -20,4 +40,7 @@ enum class MapLayerStyle {
 val mapLayerSelectorButtonsToStyles =
     mapOf(
         R.id.fabMapLayerOpenStreetMap to MapLayerStyle.OpenStreetMapNormal,
-        R.id.fabMapLayerOpenStreetMapWikimedia to MapLayerStyle.OpenStreetMapWikimedia)
+        R.id.fabMapLayerOpenStreetMapWikimedia to MapLayerStyle.OpenStreetMapWikimedia,
+        R.id.fabMapLayerBaiduMapNormal to MapLayerStyle.BaiduMapNormal,
+        R.id.fabMapLayerBaiduMapSatellite to MapLayerStyle.BaiduMapSatellite,
+        R.id.fabMapLayerBaiduMapHybrid to MapLayerStyle.BaiduMapHybrid)

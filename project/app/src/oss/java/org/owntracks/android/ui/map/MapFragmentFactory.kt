@@ -20,7 +20,10 @@ constructor(
 ) : FragmentFactory() {
   override fun instantiate(classLoader: ClassLoader, className: String): Fragment {
     return if (MapFragment::class.java.isAssignableFrom(classLoader.loadClass(className))) {
-      OSMMapFragment(preferences, contactImageBindingAdapter)
+      preferences.mapLayerStyle
+          .getFragmentClass()
+          .getConstructor(Preferences::class.java, ContactImageBindingAdapter::class.java)
+          .newInstance(preferences, contactImageBindingAdapter)
     } else {
       super.instantiate(classLoader, className)
     }

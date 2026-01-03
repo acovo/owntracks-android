@@ -59,8 +59,30 @@ android {
 
   androidResources { generateLocaleConfig = true }
 
-  if (!System.getenv("KEYSTORE_PASSPHRASE").isNullOrBlank()) {
-    signingConfigs {
+  signingConfigs {
+    // 检查是否已经有debug签名配置，如果没有就创建
+    val debugSigningConfig = findByName("debug")
+    if (debugSigningConfig != null) {
+      debugSigningConfig.apply {
+        keyAlias = "androiddebugkey"
+        keyPassword = "android"
+        storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+        storePassword = "android"
+        enableV1Signing = true
+        enableV2Signing = true
+      }
+    } else {
+      create("debug") {
+        keyAlias = "androiddebugkey"
+        keyPassword = "android"
+        storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+        storePassword = "android"
+        enableV1Signing = true
+        enableV2Signing = true
+      }
+    }
+    
+    if (!System.getenv("KEYSTORE_PASSPHRASE").isNullOrBlank()) {
       register("release") {
         keyAlias = "upload"
         keyPassword = System.getenv("KEYSTORE_PASSPHRASE")
@@ -98,6 +120,8 @@ android {
               file("proguard-rules.pro"),
           ),
       )
+      // 使用已有的debug签名配置
+      signingConfig = signingConfigs.findByName("debug")
       resValue("string", "GOOGLE_MAPS_API_KEY", googleMapsAPIKey)
       applicationIdSuffix = ".debug"
       enableUnitTestCoverage = true
@@ -179,7 +203,15 @@ android {
         gmsImplementation(libs.play.services.location)
       }
     }
-    create("oss") { dimension = "locationProvider" }
+    create("oss") {
+      dimension = "locationProvider"
+      dependencies {
+        // 百度地图SDK依赖配置
+        implementation("com.baidu.lbsyun:BaiduMapSDK_Map:7.6.4")
+        implementation("com.baidu.lbsyun:BaiduMapSDK_Search:7.6.4")
+        implementation("com.baidu.lbsyun:BaiduMapSDK_Util:7.6.4")
+      }
+    }
   }
 }
 
@@ -211,6 +243,9 @@ dependencies {
 
   // Mapping
   implementation(libs.osmdroid)
+  // 百度地图SDK依赖暂时注释，使用本地AAR文件（已移至oss风味的dependencies块中）
+  // implementation(libs.baidu.map.sdk)
+  // implementation(libs.baidu.map.utils)
 
   // Connectivity
   implementation(libs.paho.mqttclient)
