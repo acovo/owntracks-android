@@ -1,5 +1,7 @@
 package org.owntracks.android.services
 
+import org.owntracks.android.BuildConfig
+
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -29,6 +31,7 @@ import kotlinx.coroutines.sync.withLock
 import org.owntracks.android.data.EndpointState
 import org.owntracks.android.data.repos.ContactsRepo
 import org.owntracks.android.data.repos.EndpointStateRepo
+import org.owntracks.android.data.repos.LocationRepo
 import org.owntracks.android.data.waypoints.WaypointsRepo
 import org.owntracks.android.di.ApplicationScope
 import org.owntracks.android.di.CoroutineScopes.IoDispatcher
@@ -76,6 +79,7 @@ constructor(
     private val messageReceivedIdlingResource: IdlingResourceWithData<MessageBase>,
     @Named("CAKeyStore") private val caKeyStore: KeyStore,
     private val locationProcessorLazy: Lazy<LocationProcessor>,
+    private val locationRepo: LocationRepo,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @ApplicationScope private val scope: CoroutineScope,
     @Named("mqttConnectionIdlingResource")
@@ -83,6 +87,16 @@ constructor(
 ) : Preferences.OnPreferenceChangeListener {
   private var endpoint: MessageProcessorEndpoint? = null
   private lateinit var outgoingQueue: BlockingDeque<MessageBase>
+  
+  // LWT message counter for OSS flavor
+  private var lwtMessageCounter: Int = 0
+  // Last published location for comparison
+  private var lastPublishedLocation: android.location.Location? = null
+  // Fibonacci sequence first 13 terms
+  private val fibonacciSequence = intArrayOf(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233)
+  // Current index in fibonacci sequence
+  private var fibonacciIndex: Int = 0
+  
   private val queueInitJob: Job =
       scope.launch(ioDispatcher) {
         outgoingQueue =
@@ -457,9 +471,65 @@ constructor(
 
   private fun processIncomingMessage(message: MessageLwt) {
     scope.launch {
-      Timber.i("Received LWT message, triggering location update")
-      // When LWT message is received, automatically trigger location update
-      service?.requestOnDemandLocationUpdate(MessageLocation.ReportType.PING)
+      Timber.i("Received LWT message, processing location update logic")
+      
+      // Only apply the fibonacci logic for OSS flavor
+      if (BuildConfig.FLAVOR == "oss") {
+        // Get the current published location
+        val currentLocation = locationRepo.currentPublishedLocation.value
+        
+        // Create local copies to avoid smart cast issues
+        val localLastPublishedLocation = lastPublishedLocation
+        val localLwtMessageCounter = lwtMessageCounter
+        val localFibonacciIndex = fibonacciIndex
+        
+        // Check if location has changed
+        val locationChanged = if (localLastPublishedLocation == null || currentLocation == null) {
+          // No previous location or no current location, consider it changed
+          true
+        } else {
+          // Compare locations (using distance threshold of 1 meter)
+          localLastPublishedLocation.distanceTo(currentLocation) > 1.0
+        }
+        
+        if (locationChanged) {
+          // Location changed, reset counters and index
+          lwtMessageCounter = 1
+          fibonacciIndex = 0
+          lastPublishedLocation = currentLocation
+          // Trigger immediate location update
+          service?.requestOnDemandLocationUpdate(MessageLocation.ReportType.PING)
+          Timber.i("Location changed, resetting counters and triggering immediate update")
+        } else {
+          // Location not changed, increment counter
+          val newCounter = localLwtMessageCounter + 1
+          lwtMessageCounter = newCounter
+          
+          // Get current fibonacci threshold
+          val fibonacciThreshold = fibonacciSequence[localFibonacciIndex]
+          
+          // Check if we need to trigger location update
+          if (newCounter >= fibonacciThreshold) {
+            // Trigger location update
+            service?.requestOnDemandLocationUpdate(MessageLocation.ReportType.PING)
+            Timber.i("LWT count reached fibonacci threshold $fibonacciThreshold (count: $newCounter), triggering location update")
+            
+            // Increment fibonacci index, but don't exceed the sequence length
+            if (localFibonacciIndex < fibonacciSequence.size - 1) {
+              fibonacciIndex = localFibonacciIndex + 1
+            }
+            // Reset counter
+            lwtMessageCounter = 0
+          } else {
+            Timber.i("LWT count $newCounter (threshold: $fibonacciThreshold), no location update needed")
+          }
+        }
+      } else {
+        // For non-OSS flavors, keep the original behavior
+        service?.requestOnDemandLocationUpdate(MessageLocation.ReportType.PING)
+        Timber.i("Non-OSS flavor, triggering location update immediately")
+      }
+      
       messageReceivedIdlingResource.remove(message)
     }
   }
