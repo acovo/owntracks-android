@@ -143,6 +143,14 @@ internal constructor(
               }
             }
           }
+          // 观察当前位置变化，当位置可用时自动更新地图中心（如果是设备视图模式）
+          launch {
+            currentLocation.observe(viewLifecycleOwner) { location ->
+              if (viewMode == MapViewModel.ViewMode.Device) {
+                location?.toLatLng()?.run(this@MapFragment::updateCamera)
+              }
+            }
+          }
         }
       }
 

@@ -33,7 +33,8 @@ class AospLocationProviderClient(val context: Context) : LocationProviderClient(
 
   private fun locationSourcesForPriority(priority: LocatorPriority): Set<LocationSources> =
       when (priority) {
-        LocatorPriority.HighAccuracy -> setOf(LocationSources.GPS)
+        LocatorPriority.HighAccuracy -> setOf(LocationSources.GPS, LocationSources.NETWORK)
+            .intersect(availableLocationProviders)
         else ->
             setOf(LocationSources.FUSED, LocationSources.NETWORK, LocationSources.PASSIVE)
                 .intersect(availableLocationProviders)
@@ -45,13 +46,34 @@ class AospLocationProviderClient(val context: Context) : LocationProviderClient(
   override fun singleHighAccuracyLocation(clientCallBack: LocationCallback, looper: Looper) {
     Timber.d("Getting single high-accuracy location, posting to $clientCallBack")
     locationManager?.run {
+      val executor = ExecutorCompat.create(Handler(looper))
+      val cancellationSignal = android.os.CancellationSignal()
+      
+      // First try GPS source
       LocationManagerCompat.getCurrentLocation(
           this,
           LocationSources.GPS.name.lowercase(),
-          android.os.CancellationSignal(),
-          ExecutorCompat.create(Handler(looper))) { location: Location? ->
-            location?.run { clientCallBack.onLocationResult(LocationResult(this)) }
-                ?: Timber.w("Got null location from getCurrentLocation")
+          cancellationSignal,
+          executor) { location: Location? ->
+            if (location != null) {
+              clientCallBack.onLocationResult(LocationResult(location))
+              Timber.d("Got location from GPS source")
+            } else {
+              Timber.w("Got null location from GPS, trying network source")
+              // If GPS fails, try network source
+              LocationManagerCompat.getCurrentLocation(
+                  this,
+                  LocationSources.NETWORK.name.lowercase(),
+                  android.os.CancellationSignal(),
+                  executor) { networkLocation: Location? ->
+                    if (networkLocation != null) {
+                      clientCallBack.onLocationResult(LocationResult(networkLocation))
+                      Timber.d("Got location from network source")
+                    } else {
+                      Timber.w("Got null location from both GPS and network sources")
+                    }
+                  }
+            }
           }
     }
   }

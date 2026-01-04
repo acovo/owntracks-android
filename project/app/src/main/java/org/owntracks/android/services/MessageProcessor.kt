@@ -39,6 +39,7 @@ import org.owntracks.android.model.messages.MessageCard
 import org.owntracks.android.model.messages.MessageClear
 import org.owntracks.android.model.messages.MessageCmd
 import org.owntracks.android.model.messages.MessageLocation
+import org.owntracks.android.model.messages.MessageLwt
 import org.owntracks.android.model.messages.MessageTransition
 import org.owntracks.android.model.messages.MessageUnknown
 import org.owntracks.android.model.messages.MessageWaypoint
@@ -444,10 +445,22 @@ constructor(
       is MessageTransition -> {
         processIncomingMessage(message)
       }
+      is MessageLwt -> {
+        processIncomingMessage(message)
+      }
       is MessageUnknown -> {
         Timber.w("Unknown message type received")
         messageReceivedIdlingResource.remove(message)
       }
+    }
+  }
+
+  private fun processIncomingMessage(message: MessageLwt) {
+    scope.launch {
+      Timber.i("Received LWT message, triggering location update")
+      // When LWT message is received, automatically trigger location update
+      service?.requestOnDemandLocationUpdate(MessageLocation.ReportType.PING)
+      messageReceivedIdlingResource.remove(message)
     }
   }
 

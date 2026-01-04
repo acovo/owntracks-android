@@ -165,6 +165,9 @@ constructor(
   }
 
   fun onMapReady() {
+    // 启动位置更新请求，确保能够获取到当前位置
+    requestLocationUpdatesForBlueDot()
+    
     when (viewMode) {
       is ViewMode.Contact -> {
         mutableCurrentContact.value?.run { setViewModeContact(this, true) }
@@ -429,7 +432,7 @@ constructor(
     // Paris
     private const val STARTING_LATITUDE = 48.856826
     private const val STARTING_LONGITUDE = 2.292713
-    private const val STARTING_ZOOM = 15.0
+    private const val STARTING_ZOOM = 17.0
   }
 
   sealed class ViewMode {

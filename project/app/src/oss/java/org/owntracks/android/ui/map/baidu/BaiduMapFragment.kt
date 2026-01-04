@@ -39,9 +39,7 @@ internal class BaiduMapFragment(
     val baiduLatLng = convertToBD09(latLng)
     val builder = MapStatus.Builder()
     builder.target(baiduLatLng)
-    // 设置默认缩放级别为最大级别-4
-    val maxZoomLevel = baiduMap.maxZoomLevel
-    builder.zoom(maxZoomLevel - 4f)
+    // 保持当前缩放级别，只更新位置
     baiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()))
   }
 
@@ -102,6 +100,16 @@ internal class BaiduMapFragment(
             // 空实现
           }
         })
+
+    // 使用viewModel传递的初始缩放级别
+    viewModel.initMapStartingLocation().let {
+      val baiduLatLng = convertToBD09(OwnTracksLatLng(it.latLng.latitude.value, it.latLng.longitude.value))
+      val builder = MapStatus.Builder()
+      builder.target(baiduLatLng)
+      builder.zoom(it.zoom.toFloat())
+      builder.rotate(it.rotation)
+      baiduMap.setMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()))
+    }
   }
 
   override fun reDrawRegions(regions: Set<WaypointModel>) {
