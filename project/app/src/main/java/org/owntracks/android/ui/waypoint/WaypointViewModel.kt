@@ -20,9 +20,7 @@ class WaypointViewModel
 @Inject
 constructor(private val waypointsRepo: WaypointsRepo, locationRepo: LocationRepo) : ViewModel() {
 
-  private val initialLocation =
-      locationRepo.currentBlueDotOnMapLocation?.run { LatLng(latitude, longitude) }
-          ?: LatLng(0.0, 0.0)
+  private val initialLocation = locationRepo.currentBlueDotOnMapLocation?.run { LatLng(latitude, longitude) } ?: locationRepo.currentPublishedLocation.value?.let { LatLng(it.latitude, it.longitude) } ?: LatLng(0.0, 0.0)
 
   val waypoint: LiveData<WaypointModel>
     get() = mutableWaypoint
@@ -33,6 +31,22 @@ constructor(private val waypointsRepo: WaypointsRepo, locationRepo: LocationRepo
               geofenceLatitude = initialLocation.latitude,
               geofenceLongitude = initialLocation.longitude,
               geofenceRadius = 20))
+
+  init {
+    // 监听当前位置变化，更新新区域的默认坐标
+    viewModelScope.launch {
+      locationRepo.currentPublishedLocation.collect {location ->
+        val currentWaypoint = mutableWaypoint.value
+        // 只有在创建新区域（id为0）时才更新默认坐标
+        if (currentWaypoint?.id == 0L && location != null) {
+          currentWaypoint.copy(
+              geofenceLatitude = Latitude(location.latitude),
+              geofenceLongitude = Longitude(location.longitude)
+          ).also { mutableWaypoint.postValue(it) }
+        }
+      }
+    }
+  }
 
   fun loadWaypoint(id: Long) {
     viewModelScope.launch {
