@@ -2,6 +2,7 @@ package org.owntracks.android.ui.map.baidu
 
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.StrictMode
 import android.view.View
 import androidx.databinding.ViewDataBinding
 import com.baidu.mapapi.map.*
@@ -71,8 +72,13 @@ internal class BaiduMapFragment(
   }
 
   override fun initMap() {
-    mapView = binding.root.findViewById(R.id.baiduMapView)
-    baiduMap = mapView.map
+    // 临时禁用StrictMode磁盘检查，因为百度地图初始化时会进行磁盘操作
+    val originalPolicy = StrictMode.allowThreadDiskReads().apply {
+      StrictMode.allowThreadDiskWrites()
+    }
+    try {
+      mapView = binding.root.findViewById(R.id.baiduMapView)
+      baiduMap = mapView.map
 
     // 设置地图默认状态
     baiduMap.uiSettings.isCompassEnabled = true
@@ -109,6 +115,9 @@ internal class BaiduMapFragment(
       builder.zoom(it.zoom.toFloat())
       builder.rotate(it.rotation)
       baiduMap.setMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()))
+    }
+    } finally {
+      StrictMode.setThreadPolicy(originalPolicy)
     }
   }
 

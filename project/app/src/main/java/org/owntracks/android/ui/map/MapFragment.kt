@@ -3,6 +3,7 @@ package org.owntracks.android.ui.map
 import android.graphics.Bitmap
 import android.location.Location
 import android.os.Bundle
+import android.os.StrictMode
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
@@ -93,10 +94,17 @@ internal constructor(
       container: ViewGroup?,
       savedInstanceState: Bundle?
   ): View {
-    binding =
-        DataBindingUtil.inflate<V>(inflater, layout, container, false).apply {
-          lifecycleOwner = this@MapFragment.viewLifecycleOwner
-        }
+    // 临时禁用StrictMode磁盘检查，因为百度地图MapView初始化时会进行磁盘操作
+    val originalPolicy = StrictMode.allowThreadDiskReads().apply {
+      StrictMode.allowThreadDiskWrites()
+    }
+    binding = try {
+      DataBindingUtil.inflate<V>(inflater, layout, container, false).apply {
+        lifecycleOwner = this@MapFragment.viewLifecycleOwner
+      }
+    } finally {
+      StrictMode.setThreadPolicy(originalPolicy)
+    }
 
     // Here we set up all the flow collectors to react to the universe changing. Usually contacts
     // and waypoints coming and going.
