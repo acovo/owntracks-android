@@ -1,10 +1,14 @@
 # Changelog
 
-## Version 2.5.6
+## Version 2.5.7
 
 ### Bug fixes
 
 - Fix slow starts by avoiding blocking the main thread on startup with the disk-backed queue.
+
+### Changes
+
+- OSS version: Adjust fibonacci sequence length for location reporting from 13 to 11 terms.
 
 ## Version 2.5.5
 

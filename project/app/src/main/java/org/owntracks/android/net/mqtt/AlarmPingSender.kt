@@ -14,6 +14,7 @@ import kotlinx.datetime.Instant
 import org.eclipse.paho.client.mqttv3.MqttPingSender
 import org.eclipse.paho.client.mqttv3.internal.ClientComms
 import timber.log.Timber
+import javax.inject.Inject
 
 class AlarmPingSender(private val applicationContext: Context) : MqttPingSender {
   private val alarmManager: AlarmManager = applicationContext.getSystemService()!!

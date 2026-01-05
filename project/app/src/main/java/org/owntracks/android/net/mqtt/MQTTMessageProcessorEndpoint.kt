@@ -74,7 +74,8 @@ class MQTTMessageProcessorEndpoint(
     @ApplicationScope private val scope: CoroutineScope,
     @CoroutineScopes.IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @ApplicationContext private val applicationContext: Context,
-    private val mqttConnectionIdlingResource: SimpleIdlingResource
+    private val mqttConnectionIdlingResource: SimpleIdlingResource,
+    private val keepaliveCounter: KeepaliveCounter
 ) :
     MessageProcessorEndpoint(messageProcessor),
     StatefulServiceMessageProcessor,
@@ -355,13 +356,11 @@ class MQTTMessageProcessorEndpoint(
               endpointStateRepo.setState(EndpointState.CONNECTING)
               try {
                 val executorService = ScheduledThreadPoolExecutor(8)
-                val pingSender =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                        alarmManager.canScheduleExactAlarms()) {
-                      AlarmPingSender(applicationContext)
-                    } else {
-                      AsyncPingSender(scope)
-                    }
+                val pingSender = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && alarmManager.canScheduleExactAlarms()) {
+              AlarmPingSender(applicationContext)
+            } else {
+              AsyncPingSender(scope, keepaliveCounter)
+            }
 
                 MqttAsyncClient(
                         mqttConnectionConfiguration.connectionString,
@@ -382,7 +381,7 @@ class MQTTMessageProcessorEndpoint(
                                 "Connecting to ${mqttConnectionConfiguration.connectionString} timeout = ${ it.connectionTimeout.toDuration(DurationUnit.SECONDS)}")
                           }
                           .run { connect(this).waitForCompletion() }
-                      pingAlarmReceiver = MQTTPingAlarmReceiver(this)
+                      pingAlarmReceiver = MQTTPingAlarmReceiver(this, keepaliveCounter)
                       ContextCompat.registerReceiver(
                               applicationContext,
                               pingAlarmReceiver,

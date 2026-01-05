@@ -97,8 +97,8 @@ android {
     minSdk = 24
     targetSdk = 36
 
-    versionCode = packageVersionCode
-    versionName = "2.5.6"
+    versionCode = 420507020
+    versionName = "2.5.7"
 
     val localeCount = fileTree("src/main/res/").matching { include("**/strings.xml") }.files.size
 

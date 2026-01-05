@@ -65,3 +65,4 @@ project/localscripts
 jacoco.exec
 .env
 fastlane/report.xml
+docs/FAQ.md

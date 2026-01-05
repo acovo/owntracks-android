@@ -8,8 +8,12 @@ import kotlinx.coroutines.launch
 import org.eclipse.paho.client.mqttv3.MqttPingSender
 import org.eclipse.paho.client.mqttv3.internal.ClientComms
 import timber.log.Timber
+import javax.inject.Inject
 
-class AsyncPingSender(private val scope: CoroutineScope) : MqttPingSender {
+class AsyncPingSender(
+    private val scope: CoroutineScope,
+    private val keepaliveCounter: KeepaliveCounter
+) : MqttPingSender {
   private lateinit var comms: ClientComms
 
   override fun init(comms: ClientComms) {
@@ -33,13 +37,15 @@ class AsyncPingSender(private val scope: CoroutineScope) : MqttPingSender {
 
   override fun schedule(delayInMilliseconds: Long) {
     Timber.v("MQTT keepalive scheduled in ${delayInMilliseconds.milliseconds}")
-    keepaliveJob =
+    keepaliveJob = 
         scope.launch {
           delay(delayInMilliseconds)
           Timber.v("Sending keepalive")
           try {
             comms.checkForActivity()?.waitForCompletion()
                 ?: Timber.d("MQTT keepalive token was null")
+            // Increment keepalive counter after sending ping
+            keepaliveCounter.incrementKeepaliveCounter()
           } catch (e: Exception) {
             Timber.w(e, "Unable to send MQTT ping")
           }

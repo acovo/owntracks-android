@@ -48,6 +48,7 @@ import org.owntracks.android.model.messages.MessageUnknown
 import org.owntracks.android.model.messages.MessageWaypoint
 import org.owntracks.android.net.MessageProcessorEndpoint
 import org.owntracks.android.net.http.HttpMessageProcessorEndpoint
+import org.owntracks.android.net.mqtt.KeepaliveCounter
 import org.owntracks.android.net.mqtt.MQTTMessageProcessorEndpoint
 import org.owntracks.android.preferences.DefaultsProvider.Companion.DEFAULT_SUB_TOPIC
 import org.owntracks.android.preferences.Preferences
@@ -61,9 +62,7 @@ import org.owntracks.android.test.ThresholdIdlingResourceInterface
 import timber.log.Timber
 
 @Singleton
-class MessageProcessor
-@Inject
-constructor(
+class MessageProcessor @Inject constructor(
     @ApplicationContext private val applicationContext: Context,
     private val contactsRepo: ContactsRepo,
     private val preferences: Preferences,
@@ -82,20 +81,14 @@ constructor(
     private val locationRepo: LocationRepo,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     @ApplicationScope private val scope: CoroutineScope,
+    private val keepaliveCounter: KeepaliveCounter,
     @Named("mqttConnectionIdlingResource")
     private val mqttConnectionIdlingResource: SimpleIdlingResource
 ) : Preferences.OnPreferenceChangeListener {
   private var endpoint: MessageProcessorEndpoint? = null
   private lateinit var outgoingQueue: BlockingDeque<MessageBase>
   
-  // LWT message counter for OSS flavor
-  private var lwtMessageCounter: Int = 0
-  // Last published location for comparison
-  private var lastPublishedLocation: android.location.Location? = null
-  // Fibonacci sequence first 13 terms
-  private val fibonacciSequence = intArrayOf(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233)
-  // Current index in fibonacci sequence
-  private var fibonacciIndex: Int = 0
+
   
   private val queueInitJob: Job =
       scope.launch(ioDispatcher) {
@@ -201,17 +194,18 @@ constructor(
     Timber.v("Creating endpoint for mode: $mode")
     return when (mode) {
       ConnectionMode.MQTT ->
-          MQTTMessageProcessorEndpoint(
-              this,
-              endpointStateRepo,
-              scheduler,
-              preferences,
-              parser,
-              caKeyStore,
-              scope,
-              ioDispatcher,
-              applicationContext,
-              mqttConnectionIdlingResource)
+        MQTTMessageProcessorEndpoint(
+            this,
+            endpointStateRepo,
+            scheduler,
+            preferences,
+            parser,
+            caKeyStore,
+            scope,
+            ioDispatcher,
+            applicationContext,
+            mqttConnectionIdlingResource,
+            keepaliveCounter)
       ConnectionMode.HTTP ->
           HttpMessageProcessorEndpoint(
               this,
@@ -471,65 +465,7 @@ constructor(
 
   private fun processIncomingMessage(message: MessageLwt) {
     scope.launch {
-      Timber.i("Received LWT message, processing location update logic")
-      
-      // Only apply the fibonacci logic for OSS flavor
-      if (BuildConfig.FLAVOR == "oss") {
-        // Get the current published location
-        val currentLocation = locationRepo.currentPublishedLocation.value
-        
-        // Create local copies to avoid smart cast issues
-        val localLastPublishedLocation = lastPublishedLocation
-        val localLwtMessageCounter = lwtMessageCounter
-        val localFibonacciIndex = fibonacciIndex
-        
-        // Check if location has changed
-        val locationChanged = if (localLastPublishedLocation == null || currentLocation == null) {
-          // No previous location or no current location, consider it changed
-          true
-        } else {
-          // Compare locations (using distance threshold of 1 meter)
-          localLastPublishedLocation.distanceTo(currentLocation) > 1.0
-        }
-        
-        if (locationChanged) {
-          // Location changed, reset counters and index
-          lwtMessageCounter = 1
-          fibonacciIndex = 0
-          lastPublishedLocation = currentLocation
-          // Trigger immediate location update
-          service?.requestOnDemandLocationUpdate(MessageLocation.ReportType.PING)
-          Timber.i("Location changed, resetting counters and triggering immediate update")
-        } else {
-          // Location not changed, increment counter
-          val newCounter = localLwtMessageCounter + 1
-          lwtMessageCounter = newCounter
-          
-          // Get current fibonacci threshold
-          val fibonacciThreshold = fibonacciSequence[localFibonacciIndex]
-          
-          // Check if we need to trigger location update
-          if (newCounter >= fibonacciThreshold) {
-            // Trigger location update
-            service?.requestOnDemandLocationUpdate(MessageLocation.ReportType.PING)
-            Timber.i("LWT count reached fibonacci threshold $fibonacciThreshold (count: $newCounter), triggering location update")
-            
-            // Increment fibonacci index, but don't exceed the sequence length
-            if (localFibonacciIndex < fibonacciSequence.size - 1) {
-              fibonacciIndex = localFibonacciIndex + 1
-            }
-            // Reset counter
-            lwtMessageCounter = 0
-          } else {
-            Timber.i("LWT count $newCounter (threshold: $fibonacciThreshold), no location update needed")
-          }
-        }
-      } else {
-        // For non-OSS flavors, keep the original behavior
-        service?.requestOnDemandLocationUpdate(MessageLocation.ReportType.PING)
-        Timber.i("Non-OSS flavor, triggering location update immediately")
-      }
-      
+      Timber.i("Received LWT message, processing completed")
       messageReceivedIdlingResource.remove(message)
     }
   }
