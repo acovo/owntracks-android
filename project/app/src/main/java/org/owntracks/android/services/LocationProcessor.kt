@@ -66,7 +66,7 @@ constructor(
 
   private val highAccuracyProviders = setOf("gps", "fused")
 
-  private suspend fun publishLocationMessage(
+  suspend fun publishLocationMessage(
       trigger: MessageLocation.ReportType,
       location: Location
   ): Result<Unit> {

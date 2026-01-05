@@ -73,9 +73,20 @@ class KeepaliveCounter @Inject constructor(
                     
                     // Check if we need to trigger location update
                     if (newCounter >= fibonacciThreshold) {
-                        // Trigger location update
-                        locationProcessor.get().publishLocationMessage(MessageLocation.ReportType.PING)
-                        Timber.i("Keepalive count reached fibonacci threshold $fibonacciThreshold (count: $newCounter), triggering location update")
+                        // Create a copy of the current location with updated time
+                        val locationWithUpdatedTime = currentLocation?.let {
+                            Location(it).apply {
+                                time = System.currentTimeMillis()
+                            }
+                        } ?: currentLocation
+                        
+                        // Trigger location update with the location that has updated time
+                        locationWithUpdatedTime?.let {
+                            locationProcessor.get().publishLocationMessage(MessageLocation.ReportType.PING, it)
+                        } ?: run {
+                            locationProcessor.get().publishLocationMessage(MessageLocation.ReportType.PING)
+                        }
+                        Timber.i("Keepalive count reached fibonacci threshold $fibonacciThreshold (count: $newCounter), triggering location update with updated time")
                         
                         // Increment fibonacci index, but don't exceed the sequence length
                         if (localFibonacciIndex < fibonacciSequence.size - 1) {
