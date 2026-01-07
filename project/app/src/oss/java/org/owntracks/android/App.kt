@@ -2,6 +2,7 @@ package org.owntracks.android
 
 import android.os.StrictMode
 import dagger.hilt.android.HiltAndroidApp
+import org.owntracks.android.BuildConfig
 import org.owntracks.android.support.receiver.StartBackgroundServiceReceiver
 
 @HiltAndroidApp
@@ -20,6 +21,11 @@ class App : BaseApp() {
       com.baidu.mapapi.SDKInitializer.initialize(this)
     } finally {
       StrictMode.setThreadPolicy(originalPolicy)
+    }
+    // 只有在DEBUG模式下才允许磁盘违例，因为百度地图SDK会在主线程进行磁盘操作
+    if (BuildConfig.DEBUG) {
+      StrictMode.allowThreadDiskReads()
+      StrictMode.allowThreadDiskWrites()
     }
     StartBackgroundServiceReceiver.enable(this)
   }
