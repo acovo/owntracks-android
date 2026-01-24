@@ -7,11 +7,14 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.Socket
 import java.security.KeyStore
+import java.security.cert.X509Certificate
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
+import javax.net.ssl.TrustManager
 import javax.net.ssl.TrustManagerFactory
+import javax.net.ssl.X509TrustManager
 import timber.log.Timber
 
 class SocketFactory(
@@ -29,15 +32,20 @@ class SocketFactory(
       var socketTimeout: Int = 0
   )
 
+  // TrustManager that trusts all certificates
+  private val trustAllCerts = arrayOf<TrustManager>(
+      object : X509TrustManager {
+        override fun getAcceptedIssuers(): Array<X509Certificate>? = null
+        override fun checkClientTrusted(certs: Array<X509Certificate>, authType: String) {}
+        override fun checkServerTrusted(certs: Array<X509Certificate>, authType: String) {}
+      }
+  )
+
   // This needs to be init off the main thread, as KeyChain operations are blocking
   init {
     Timber.v("initializing CustomSocketFactory")
-    val trustManagerFactory =
-        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
     val keyManagerFactory = KeyManagerFactory.getInstance("X509")
     socketTimeout = options.socketTimeout
-
-    trustManagerFactory.init(caKeyStore)
 
     keyManagerFactory.init(null, null)
     if (options.clientCertificateAlias.isNotEmpty()) {
@@ -57,10 +65,10 @@ class SocketFactory(
       }
     }
 
-    // Create an SSLContext that uses our TrustManager
+    // Create an SSLContext that trusts all certificates
     factory =
         SSLContext.getInstance("TLS")
-            .apply { init(keyManagerFactory.keyManagers, trustManagerFactory.trustManagers, null) }
+            .apply { init(keyManagerFactory.keyManagers, trustAllCerts, null) }
             .socketFactory
   }
 
