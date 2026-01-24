@@ -215,7 +215,7 @@ android {
           ),
       )
       resValue("string", "GOOGLE_MAPS_API_KEY", googleMapsAPIKey)
-      signingConfig = signingConfigs.findByName("release")
+      signingConfig = signingConfigs.findByName("debug")
     }
 
     named("debug") {
