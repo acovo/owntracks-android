@@ -84,7 +84,24 @@ val remoteConfiguration = if (localProperties.exists()) {
 
 val gmsImplementation: Configuration by configurations.creating
 
-val packageVersionCode: Int = System.getenv("VERSION_CODE")?.toInt() ?: 1
+val versionNameValue = "2.5.6"
+
+fun generateVersionCode(versionName: String): Int {
+  val parts = versionName.split(".")
+  val major = parts.getOrNull(0)?.toIntOrNull() ?: 0
+  val minor = parts.getOrNull(1)?.toIntOrNull() ?: 0
+  val patch = parts.getOrNull(2)?.toIntOrNull() ?: 0
+  return 400000000 + major * 10000000 + minor * 100000 + patch * 1000
+}
+
+val generatedVersionCode = generateVersionCode(versionNameValue)
+val envVersionCode = System.getenv("VERSION_CODE")?.toInt()
+val packageVersionCode: Int =
+    if (envVersionCode != null && envVersionCode > generatedVersionCode) {
+      envVersionCode
+    } else {
+      generatedVersionCode
+    }
 val manuallySetVersion: Boolean = System.getenv("VERSION_CODE") != null
 val enablePlayPublishing: Boolean = !System.getenv("ANDROID_PUBLISHER_CREDENTIALS").isNullOrBlank()
 
@@ -97,8 +114,8 @@ android {
     minSdk = 24
     targetSdk = 36
 
-    versionCode = 420507020
-    versionName = "2.5.7"
+    versionCode = packageVersionCode
+    versionName = versionNameValue
 
     val localeCount = fileTree("src/main/res/").matching { include("**/strings.xml") }.files.size
 

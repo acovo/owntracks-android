@@ -2,9 +2,14 @@
 
 ## Version 2.5.7
 
+### New features
+
+- Migrated message queue to use Room database instead of tape2 for better async performance and reliability
+
 ### Bug fixes
 
 - Fix slow starts by avoiding blocking the main thread on startup with the disk-backed queue.
+- Significantly reduced battery drain and improved responsiveness in MQTT mode during poor network conditions by changing reconnection retry strategy from linear to exponential backoff
 
 ### Changes
 
